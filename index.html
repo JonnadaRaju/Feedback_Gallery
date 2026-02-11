@@ -1,10 +1,12 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bootcamp Student Feedback</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
- <style>
+  
+  <style>
     * {
       margin: 0;
       padding: 0;
@@ -13,195 +15,266 @@
 
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: #0a0e27;
+      background-image: 
+        radial-gradient(2px 2px at 20% 30%, white, transparent),
+        radial-gradient(2px 2px at 60% 70%, white, transparent),
+        radial-gradient(1px 1px at 50% 50%, white, transparent),
+        radial-gradient(1px 1px at 80% 10%, white, transparent),
+        radial-gradient(2px 2px at 90% 60%, white, transparent),
+        radial-gradient(1px 1px at 33% 80%, white, transparent),
+        radial-gradient(1px 1px at 15% 90%, white, transparent);
+      background-size: 200% 200%;
+      background-position: 0% 0%;
+      animation: starfield 200s linear infinite;
+      color: white;
       min-height: 100vh;
-      padding: 20px;
+      padding: 60px 20px;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(ellipse at top, rgba(88, 101, 242, 0.15), transparent 50%),
+                  radial-gradient(ellipse at bottom, rgba(139, 92, 246, 0.15), transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    @keyframes starfield {
+      0% { background-position: 0% 0%; }
+      100% { background-position: 100% 100%; }
     }
 
     .container {
-      max-width: 1200px;
+      max-width: 1400px;
       margin: 0 auto;
+      position: relative;
+      z-index: 1;
     }
 
-    /* Header */
-    .header {
-      text-align: center;
-      margin-bottom: 40px;
-      padding: 30px;
-      background: rgba(255, 255, 255, 0.95);
-      border-radius: 20px;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    /* Left Section */
+    .content-wrapper {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 60px;
+      margin-bottom: 50px;
     }
 
-    h1 {
-      font-size: 42px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    .left-section {
+      position: sticky;
+      top: 40px;
+      height: fit-content;
+    }
+
+    .main-title {
+      font-size: 56px;
+      font-weight: 700;
+      line-height: 1.1;
+      margin-bottom: 30px;
+      background: linear-gradient(135deg, #fff 0%, #a78bfa 50%, #60a5fa 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      margin-bottom: 10px;
+      text-shadow: 0 0 40px rgba(167, 139, 250, 0.5);
+      filter: drop-shadow(0 0 20px rgba(167, 139, 250, 0.3));
+    }
+
+    .description {
+      font-size: 18px;
+      line-height: 1.6;
+      color: #a8b3cf;
+      margin-bottom: 40px;
+    }
+
+    .rating-section {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .stars {
+      display: flex;
+      gap: 5px;
+      font-size: 28px;
+    }
+
+    .star {
+      color: #fbbf24;
+      filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.6));
+    }
+
+    .rating-text {
+      font-size: 24px;
       font-weight: 700;
+      color: white;
     }
 
-    .subtitle {
-      color: #666;
-      font-size: 16px;
+    .rating-count {
+      color: #a8b3cf;
+      font-size: 18px;
     }
 
-    /* Cards Grid */
-    .cards-grid {
+    /* Right Section - Testimonials Grid */
+    .testimonials-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(500px, 1fr));
+      grid-template-columns: repeat(2, 1fr);
       gap: 25px;
       margin-bottom: 40px;
     }
 
-    .card {
-      background: white;
-      border-radius: 16px;
-      padding: 25px;
-      display: flex;
-      gap: 20px;
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    .testimonial-card {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(139, 92, 246, 0.2);
+      border-radius: 20px;
+      padding: 35px;
+      transition: all 0.4s ease;
       position: relative;
-      overflow: hidden;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
+                  inset 0 1px 0 rgba(255, 255, 255, 0.05);
     }
 
-    .card::before {
+    .testimonial-card::before {
       content: '';
       position: absolute;
       top: 0;
       left: 0;
-      width: 100%;
-      height: 4px;
-      background: linear-gradient(90deg, #667eea, #764ba2, #f093fb, #4facfe);
-      background-size: 300% 100%;
-      animation: gradientShift 3s ease infinite;
+      right: 0;
+      bottom: 0;
+      border-radius: 20px;
+      padding: 1px;
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(96, 165, 250, 0.3));
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      opacity: 0;
+      transition: opacity 0.4s ease;
     }
 
-    @keyframes gradientShift {
-      0%, 100% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-    }
-
-    .card:hover {
+    .testimonial-card:hover {
+      background: rgba(15, 23, 42, 0.8);
+      border-color: rgba(139, 92, 246, 0.4);
       transform: translateY(-8px);
-      box-shadow: 0 15px 50px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 20px 60px rgba(139, 92, 246, 0.3),
+                  0 0 40px rgba(96, 165, 250, 0.2),
+                  inset 0 1px 0 rgba(255, 255, 255, 0.1);
     }
 
-    .card-image {
-      flex-shrink: 0;
+    .testimonial-card:hover::before {
+      opacity: 1;
     }
 
-    .card-image img {
-      width: 120px;
-      height: 120px;
-      object-fit: cover;
-      border-radius: 12px;
-      border: 3px solid #f0f0f0;
-      transition: transform 0.3s ease;
+    .quote-icon {
+      font-size: 48px;
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(96, 165, 250, 0.3));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+      margin-bottom: 20px;
+      filter: drop-shadow(0 0 10px rgba(139, 92, 246, 0.4));
     }
 
-    .card:hover .card-image img {
-      transform: scale(1.05);
+    .feedback-content {
+      font-size: 16px;
+      line-height: 1.7;
+      color: #e2e8f0;
+      font-style: italic;
+      margin-bottom: 25px;
+      min-height: 100px;
     }
 
-    .card-content {
-      flex: 1;
+    .student-info {
       display: flex;
-      flex-direction: column;
-      gap: 10px;
+      align-items: center;
+      gap: 15px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .student-avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(139, 92, 246, 0.4);
+      box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+    }
+
+    .student-details {
+      flex: 1;
     }
 
     .student-name {
-      font-size: 24px;
-      font-weight: 700;
-      color: #2d3748;
-      margin-bottom: 5px;
-    }
-
-    .roll-number {
-      display: inline-block;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 13px;
+      font-size: 16px;
       font-weight: 600;
-      width: fit-content;
+      color: #ffffff;
+      margin-bottom: 4px;
     }
 
-    .feedback-text {
-      color: #4a5568;
-      font-size: 15px;
-      line-height: 1.6;
-      font-style: italic;
-      position: relative;
-      padding-left: 20px;
-      border-left: 3px solid #e2e8f0;
-      margin-top: 10px;
-    }
-
-    .feedback-text::before {
-      content: '"';
-      position: absolute;
-      left: -5px;
-      top: -5px;
-      font-size: 40px;
-      color: #e2e8f0;
-      font-family: Georgia, serif;
+    .student-roll {
+      font-size: 13px;
+      color: #60a5fa;
+      font-weight: 500;
+      text-shadow: 0 0 10px rgba(96, 165, 250, 0.5);
     }
 
     /* Pagination */
-    .pagination-container {
-      background: rgba(255, 255, 255, 0.95);
-      border-radius: 16px;
-      padding: 25px;
+    .pagination-wrapper {
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: 20px;
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+      gap: 25px;
+      margin-top: 50px;
     }
 
     .pagination-btn {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(139, 92, 246, 0.3);
       color: white;
-      border: none;
-      padding: 12px 28px;
+      padding: 14px 30px;
       border-radius: 30px;
       font-size: 15px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.3s ease;
-      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
     }
 
     .pagination-btn:hover:not(:disabled) {
+      background: rgba(139, 92, 246, 0.2);
+      border-color: rgba(139, 92, 246, 0.5);
       transform: translateY(-2px);
-      box-shadow: 0 6px 25px rgba(102, 126, 234, 0.6);
+      box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
     }
 
     .pagination-btn:disabled {
-      background: #cbd5e0;
+      opacity: 0.3;
       cursor: not-allowed;
-      box-shadow: none;
     }
 
     .page-info {
       font-size: 16px;
       font-weight: 600;
-      color: #2d3748;
+      color: #a8b3cf;
       min-width: 100px;
       text-align: center;
     }
 
     /* Loading State */
     .loading {
+      grid-column: 1 / -1;
       text-align: center;
-      padding: 60px;
-      color: white;
+      padding: 80px;
+      color: #a8b3cf;
       font-size: 18px;
     }
 
@@ -210,7 +283,7 @@
       display: inline-block;
       width: 30px;
       height: 30px;
-      border: 3px solid rgba(255, 255, 255, 0.3);
+      border: 3px solid rgba(255, 255, 255, 0.2);
       border-top-color: white;
       border-radius: 50%;
       animation: spin 1s linear infinite;
@@ -224,88 +297,126 @@
 
     /* Empty State */
     .empty-state {
+      grid-column: 1 / -1;
       text-align: center;
-      padding: 60px;
-      background: white;
+      padding: 80px;
+      background: rgba(255, 255, 255, 0.03);
       border-radius: 16px;
-      color: #718096;
+      border: 1px solid rgba(255, 255, 255, 0.08);
     }
 
     .empty-state h3 {
       font-size: 24px;
       margin-bottom: 10px;
+      color: white;
     }
 
-    /* Responsive */
-    @media (max-width: 768px) {
-      .cards-grid {
+    .empty-state p {
+      color: #a8b3cf;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1200px) {
+      .content-wrapper {
         grid-template-columns: 1fr;
+        gap: 40px;
       }
 
-      .card {
-        flex-direction: column;
+      .left-section {
+        position: static;
         text-align: center;
       }
 
-      .card-image img {
-        margin: 0 auto;
+      .rating-section {
+        justify-content: center;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .testimonials-grid {
+        grid-template-columns: 1fr;
       }
 
-      .feedback-text {
-        border-left: none;
-        border-top: 3px solid #e2e8f0;
-        padding-left: 0;
-        padding-top: 15px;
+      .main-title {
+        font-size: 40px;
       }
 
-      .roll-number {
-        margin: 0 auto;
+      .description {
+        font-size: 16px;
       }
 
-      h1 {
-        font-size: 32px;
-      }
-
-      .pagination-container {
+      .pagination-wrapper {
         flex-wrap: wrap;
       }
     }
   </style>
 </head>
 
-
 <body>
   <div class="container">
-    <div class="header">
-      <h1>🎓 Bootcamp Student Feedback</h1>
-      <p class="subtitle">Discover what our students are saying about their learning journey</p>
-    </div>
+    <div class="content-wrapper">
+      <!-- Left Section -->
+      <div class="left-section">
+        <h1 class="main-title">What they say about us</h1>
+        <p class="description">
+          Discover the experiences and success stories from our bootcamp students who transformed their careers through our program.
+        </p>
+        <div class="rating-section">
+          <div class="stars">
+            <span class="star">★</span>
+            <span class="star">★</span>
+            <span class="star">★</span>
+            <span class="star">★</span>
+            <span class="star">★</span>
+          </div>
+          <div>
+            <div class="rating-text">4.8/5</div>
+            <div class="rating-count" id="totalCount">(0)</div>
+          </div>
+        </div>
+      </div>
 
-    <div id="students" class="cards-grid"></div>
-
-    <div class="pagination-container">
-      <button class="pagination-btn" id="prevBtn" onclick="prevPage()">
-        ← Previous
-      </button>
-      <span class="page-info" id="pageInfo">Page 1</span>
-      <button class="pagination-btn" id="nextBtn" onclick="nextPage()">
-        Next →
-      </button>
+      <!-- Right Section - Testimonials -->
+      <div>
+        <div id="students" class="testimonials-grid"></div>
+        
+        <div class="pagination-wrapper">
+          <button class="pagination-btn" id="prevBtn" onclick="prevPage()">
+            ← Previous
+          </button>
+          <span class="page-info" id="pageInfo">Page 1</span>
+          <button class="pagination-btn" id="nextBtn" onclick="nextPage()">
+            Next →
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
   <script>
     const supabaseUrl = "https://ytxwtzqwmnmcvdhklbrw.supabase.co";
-    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl0eHd0enF3bW5tY3ZkaGtsYnJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3ODY2NDAsImV4cCI6MjA4NjM2MjY0MH0.hTAT2QcLxOrlTRVsVnWNJM1S5_4p0wU86cyI5vY5SMU";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl0eHd0enF3bW5tY3ZkaGtsYnJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3ODY2NDAsImV4cCI6MjA4NjM2MjY0MH0.hTAT2QcLxOrlTRVsVnWNJM1S5_4p0wU86cyI5vY5SMU"; 
 
     const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
 
     let page = 0;
-    const limit = 10; // Changed to 10 per page
+    const limit = 10;
+    let totalStudents = 0;
+
+    async function fetchTotalCount() {
+      const { count, error } = await supabaseClient
+        .from("students_feedback")
+        .select("*", { count: 'exact', head: true });
+
+      if (!error && count) {
+        totalStudents = count;
+        document.getElementById("totalCount").innerText = `(${count})`;
+      }
+    }
 
     async function fetchStudents() {
       const container = document.getElementById("students");
-      container.innerHTML = '<div class="loading">Loading students...</div>';
+      container.innerHTML = '<div class="loading">Loading testimonials...</div>';
 
       const from = page * limit;
       const to = from + limit - 1;
@@ -335,7 +446,7 @@
         }
         container.innerHTML = `
           <div class="empty-state">
-            <h3>📭 No Students Found</h3>
+            <h3>📭 No Testimonials Found</h3>
             <p>There are no student feedback records to display.</p>
           </div>
         `;
@@ -344,17 +455,19 @@
 
       data.forEach(student => {
         const card = document.createElement('div');
-        card.className = 'card';
+        card.className = 'testimonial-card';
         card.innerHTML = `
-          <div class="card-image">
-            <img src="${student.image_url || 'https://via.placeholder.com/120'}"
-                 onerror="this.src='https://via.placeholder.com/120?text=Student'"
-                 alt="${student.name}"/>
-          </div>
-          <div class="card-content">
-            <div class="student-name">${student.name}</div>
-            <div class="roll-number">Roll No: ${student["Roll Number"]}</div>
-            <div class="feedback-text">${student.feedback}</div>
+          <div class="quote-icon">"</div>
+          <div class="feedback-content">${student.feedback}</div>
+          <div class="student-info">
+            <img src="${student.image_url || 'https://via.placeholder.com/50'}"
+                 onerror="this.src='https://via.placeholder.com/50?text=' + '${student.name.charAt(0)}'"
+                 alt="${student.name}"
+                 class="student-avatar"/>
+            <div class="student-details">
+              <div class="student-name">${student.name}</div>
+              <div class="student-roll">Roll No: ${student["Roll Number"]}</div>
+            </div>
           </div>
         `;
         container.appendChild(card);
@@ -384,8 +497,8 @@
     }
 
     // Initial load
+    fetchTotalCount();
     fetchStudents();
   </script>
 </body>
-
 </html>
