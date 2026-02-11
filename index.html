@@ -273,85 +273,119 @@
   </style>
 </head>
 
+
 <body>
+  <div class="container">
+    <div class="header">
+      <h1>🎓 Bootcamp Student Feedback</h1>
+      <p class="subtitle">Discover what our students are saying about their learning journey</p>
+    </div>
 
-  <h1>Bootcamp Student Feedback</h1>
+    <div id="students" class="cards-grid"></div>
 
-  <div id="students"></div>
-
-  <div class="pagination">
-    <button id="prevBtn" onclick="prevPage()">Previous</button>
-    <span id="pageInfo"></span>
-    <button id="nextBtn" onclick="nextPage()">Next</button>
+    <div class="pagination-container">
+      <button class="pagination-btn" id="prevBtn" onclick="prevPage()">
+        ← Previous
+      </button>
+      <span class="page-info" id="pageInfo">Page 1</span>
+      <button class="pagination-btn" id="nextBtn" onclick="nextPage()">
+        Next →
+      </button>
+    </div>
   </div>
 
-<script>
+  <script>
+    const supabaseUrl = "https://ytxwtzqwmnmcvdhklbrw.supabase.co";
+    const supabaseKey = "YOUR_PUBLIC_ANON_KEY"; // Replace with your actual anon key
 
-const supabaseUrl = "https://ytxwtzqwmnmcvdhklbrw.supabase.co";
-const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl0eHd0enF3bW5tY3ZkaGtsYnJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3ODY2NDAsImV4cCI6MjA4NjM2MjY0MH0.hTAT2QcLxOrlTRVsVnWNJM1S5_4p0wU86cyI5vY5SMU";   
+    const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+    let page = 0;
+    const limit = 10; // Changed to 10 per page
 
-let page = 0;
-const limit = 5;
+    async function fetchStudents() {
+      const container = document.getElementById("students");
+      container.innerHTML = '<div class="loading">Loading students...</div>';
 
-async function fetchStudents() {
+      const from = page * limit;
+      const to = from + limit - 1;
 
-  const from = page * limit;
-  const to = from + limit - 1;
+      const { data, error } = await supabaseClient
+        .from("students_feedback")
+        .select("*")
+        .range(from, to);
 
-  const { data, error } = await supabaseClient
-    .from("students_feedback")
-    .select("*")
-    .range(from, to);
+      if (error) {
+        console.error("Error fetching data:", error);
+        container.innerHTML = `
+          <div class="empty-state">
+            <h3>⚠️ Error Loading Data</h3>
+            <p>Please check your connection and try again.</p>
+          </div>
+        `;
+        return;
+      }
 
-  if (error) {
-    console.error(error);
-    return;
-  }
+      container.innerHTML = "";
 
-  const container = document.getElementById("students");
-  container.innerHTML = "";
+      if (data.length === 0) {
+        if (page > 0) {
+          page--;
+          return fetchStudents();
+        }
+        container.innerHTML = `
+          <div class="empty-state">
+            <h3>📭 No Students Found</h3>
+            <p>There are no student feedback records to display.</p>
+          </div>
+        `;
+        return;
+      }
 
-  if (data.length === 0 && page > 0) {
-    page--;
-    return fetchStudents();
-  }
+      data.forEach(student => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <div class="card-image">
+            <img src="${student.image_url || 'https://via.placeholder.com/120'}"
+                 onerror="this.src='https://via.placeholder.com/120?text=Student'"
+                 alt="${student.name}"/>
+          </div>
+          <div class="card-content">
+            <div class="student-name">${student.name}</div>
+            <div class="roll-number">Roll No: ${student["Roll Number"]}</div>
+            <div class="feedback-text">${student.feedback}</div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
 
-  data.forEach(student => {
-    container.innerHTML += `
-      <div class="card">
-        <img src="${student.image_url || 'https://via.placeholder.com/110'}"
-             onerror="this.src='https://via.placeholder.com/110'"/>
-        <div class="card-content">
-          <h2>${student.name}</h2>
-          <div class="roll">Roll No: ${student["Roll Number"]}</div>
-          <div class="feedback">"${student.feedback}"</div>
-        </div>
-      </div>
-    `;
-  });
+      updatePaginationUI(data.length);
+    }
 
-  document.getElementById("pageInfo").innerText = `Page ${page + 1}`;
-  document.getElementById("prevBtn").disabled = page === 0;
-  document.getElementById("nextBtn").disabled = data.length < limit;
-}
+    function updatePaginationUI(dataLength) {
+      document.getElementById("pageInfo").innerText = `Page ${page + 1}`;
+      document.getElementById("prevBtn").disabled = page === 0;
+      document.getElementById("nextBtn").disabled = dataLength < limit;
+    }
 
-function nextPage() {
-  page++;
-  fetchStudents();
-}
+    function nextPage() {
+      page++;
+      fetchStudents();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 
-function prevPage() {
-  if (page > 0) {
-    page--;
+    function prevPage() {
+      if (page > 0) {
+        page--;
+        fetchStudents();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+
+    // Initial load
     fetchStudents();
-  }
-}
-
-fetchStudents();
-
-</script>
-
+  </script>
 </body>
+
 </html>
