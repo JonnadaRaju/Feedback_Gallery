@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Testimonials - Dual Scroll</title>
+    <title>Student Testimonials</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Fraunces:wght@700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -166,19 +166,34 @@
         /* Infinite scroll tracks */
         .testimonials-track {
             display: flex;
-            gap: 0px; /* Remove gap since cards have margin now */
+            gap: 0px;
             will-change: transform;
-            padding: 15px 0; /* Add padding for glow space */
+            padding: 15px 0;
+            cursor: grab;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+
+        .testimonials-track.dragging {
+            cursor: grabbing;
+            animation-play-state: paused !important;
         }
 
         /* First row - scroll LEFT (right to left) */
         .row-1 .testimonials-track {
-            animation: scrollLeft 30s linear infinite;
+            animation: scrollLeft 10s linear infinite;
         }
 
         /* Second row - scroll RIGHT (left to right) */
         .row-2 .testimonials-track {
-            animation: scrollRight 30s linear infinite;
+            animation: scrollRight 10s linear infinite;
+        }
+
+        /* Pause animation when dragging - more specific */
+        .testimonials-track.dragging {
+            animation: none !important;
         }
 
         @keyframes scrollLeft {
@@ -203,7 +218,7 @@
         .testimonial-card {
             min-width: 260px;
             max-width: 260px;
-            height: 180px; /* Smaller, more compact */
+            height: 180px;
             background: var(--card-bg);
             border-radius: 16px;
             padding: 20px;
@@ -214,7 +229,8 @@
             cursor: pointer;
             display: flex;
             flex-direction: column;
-            margin: 10px; /* Reduced margin */
+            margin: 10px;
+            pointer-events: auto;
         }
 
         .testimonial-card:hover {
@@ -306,7 +322,6 @@
             flex: 1;
             overflow-y: auto;
             padding-right: 6px;
-            /* Custom scrollbar */
             scrollbar-width: thin;
             scrollbar-color: rgba(79, 70, 229, 0.3) transparent;
         }
@@ -400,7 +415,7 @@
 
         .student-details {
             flex: 1;
-            min-width: 0; /* Allow text truncation */
+            min-width: 0;
         }
 
         .student-name {
@@ -590,6 +605,30 @@
             letter-spacing: 1px;
         }
 
+        /* Drag hint indicator */
+        .drag-hint {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(79, 70, 229, 0.9);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(79, 70, 229, 0.4);
+            z-index: 1000;
+            animation: fadeInOut 3s ease-in-out;
+            pointer-events: none;
+        }
+
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0; }
+            10%, 90% { opacity: 1; }
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .testimonial-card {
@@ -613,7 +652,6 @@
                 width: 60px;
             }
 
-            /* Faster scroll on mobile */
             .row-1 .testimonials-track {
                 animation: scrollLeft 25s linear infinite;
             }
@@ -648,14 +686,14 @@
         <div class="testimonials-container">
             <!-- First Row - Scrolls LEFT (right to left) -->
             <div class="testimonials-row row-1">
-                <div class="testimonials-track" id="track1">
+                <div class="testimonials-track" id="track1" data-track="1">
                     <div class="loading">Loading testimonials</div>
                 </div>
             </div>
 
             <!-- Second Row - Scrolls RIGHT (left to right) -->
             <div class="testimonials-row row-2">
-                <div class="testimonials-track" id="track2">
+                <div class="testimonials-track" id="track2" data-track="2">
                     <div class="loading">Loading testimonials</div>
                 </div>
             </div>
@@ -702,8 +740,26 @@ const TABLE_NAME = "students_feedback";
 // ==========================
 let allStudents = [];
 let currentPage = 0;
-const CARDS_PER_ROW = 10; // Number of unique cards per row
-const TOTAL_CARDS_PER_PAGE = CARDS_PER_ROW * 2; // 10 cards in row 1 + 10 cards in row 2
+const CARDS_PER_ROW = 10;
+const TOTAL_CARDS_PER_PAGE = CARDS_PER_ROW * 2;
+
+// ==========================
+// DRAG TO SCROLL STATE
+// ==========================
+const dragState = {
+  track1: {
+    isDragging: false,
+    startX: 0,
+    scrollLeft: 0,
+    animationOffset: 0
+  },
+  track2: {
+    isDragging: false,
+    startX: 0,
+    scrollLeft: 0,
+    animationOffset: 0
+  }
+};
 
 // ==========================
 // STAR GENERATOR
@@ -748,6 +804,81 @@ function createTestimonialCard(student) {
 }
 
 // ==========================
+// DRAG TO SCROLL FUNCTIONALITY
+// ==========================
+function initDragToScroll(trackElement, trackNumber) {
+  const state = dragState[`track${trackNumber}`];
+  let startPos = 0;
+  let currentTranslate = 0;
+  let prevTranslate = 0;
+  
+  // Get current animation position
+  function getAnimationTranslateX() {
+    const transform = window.getComputedStyle(trackElement).transform;
+    if (transform === 'none') return 0;
+    const matrix = transform.match(/matrix.*\((.+)\)/);
+    if (matrix) {
+      const values = matrix[1].split(', ');
+      return parseFloat(values[4]) || 0;
+    }
+    return 0;
+  }
+  
+  // Mouse down - start dragging
+  function dragStart(e) {
+    state.isDragging = true;
+    startPos = e.type.includes('mouse') ? e.pageX : e.touches[0].clientX;
+    
+    // Capture current animation position
+    prevTranslate = getAnimationTranslateX();
+    currentTranslate = prevTranslate;
+    
+    trackElement.classList.add('dragging');
+    trackElement.style.cursor = 'grabbing';
+  }
+
+  // Mouse/Touch move - drag
+  function drag(e) {
+    if (!state.isDragging) return;
+    
+    const currentPosition = e.type.includes('mouse') ? e.pageX : e.touches[0].clientX;
+    const diff = currentPosition - startPos;
+    currentTranslate = prevTranslate + diff;
+    
+    // Apply transform
+    trackElement.style.transform = `translateX(${currentTranslate}px)`;
+  }
+
+  // Mouse up - stop dragging
+  function dragEnd() {
+    if (!state.isDragging) return;
+    
+    state.isDragging = false;
+    trackElement.classList.remove('dragging');
+    trackElement.style.cursor = 'grab';
+    
+    // Save the final position
+    prevTranslate = currentTranslate;
+  }
+
+  // Mouse events
+  trackElement.addEventListener('mousedown', dragStart);
+  trackElement.addEventListener('mousemove', drag);
+  trackElement.addEventListener('mouseup', dragEnd);
+  trackElement.addEventListener('mouseleave', dragEnd);
+
+  // Touch events
+  trackElement.addEventListener('touchstart', dragStart, { passive: true });
+  trackElement.addEventListener('touchmove', drag, { passive: true });
+  trackElement.addEventListener('touchend', dragEnd, { passive: true });
+
+  // Prevent context menu on long press
+  trackElement.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+  });
+}
+
+// ==========================
 // SPLIT ARRAY FOR PAGE
 // ==========================
 function getPageStudents(pageIndex) {
@@ -755,7 +886,6 @@ function getPageStudents(pageIndex) {
   const endIdx = startIdx + TOTAL_CARDS_PER_PAGE;
   const pageStudents = allStudents.slice(startIdx, endIdx);
   
-  // Split into two rows
   const mid = Math.ceil(pageStudents.length / 2);
   return [pageStudents.slice(0, mid), pageStudents.slice(mid)];
 }
@@ -775,6 +905,14 @@ function renderPage(pageIndex) {
   // Triple the content for seamless infinite scroll
   track1.innerHTML = row1HTML + row1HTML + row1HTML;
   track2.innerHTML = row2HTML + row2HTML + row2HTML;
+
+  // Reset drag state
+  dragState.track1 = { isDragging: false, startX: 0, scrollLeft: 0, animationOffset: 0 };
+  dragState.track2 = { isDragging: false, startX: 0, scrollLeft: 0, animationOffset: 0 };
+  
+  // Remove inline styles to let CSS animations work
+  track1.removeAttribute('style');
+  track2.removeAttribute('style');
 
   // Update page indicator
   document.getElementById("pageNumber").textContent = pageIndex + 1;
@@ -836,6 +974,9 @@ function calculateStats(students) {
 }
 
 
+// ==========================
+// INITIALIZE
+// ==========================
 async function init() {
   try {
     const { data: students, error } = await supabase
@@ -856,23 +997,26 @@ async function init() {
       return;
     }
 
-    // Store all students
     allStudents = students;
 
-    // Calculate total pages
     const totalPages = Math.ceil(allStudents.length / TOTAL_CARDS_PER_PAGE);
     document.getElementById("totalPages").textContent = totalPages;
     document.getElementById("totalStudents").textContent = 
       `Rated 4.5/5 by over ${allStudents.length}+ Students`;
 
-    // Render first page
     renderPage(0);
+
+    // Initialize drag functionality for both tracks
+    const track1 = document.getElementById("track1");
+    const track2 = document.getElementById("track2");
+    initDragToScroll(track1, 1);
+    initDragToScroll(track2, 2);
 
     // Stats section
     const statsSection = document.getElementById("statsSection");
     statsSection.innerHTML = calculateStats(students);
 
-    // Attach navigation handlers
+    // Navigation handlers
     document.getElementById("nextBtn").addEventListener("click", goToNextPage);
     document.getElementById("prevBtn").addEventListener("click", goToPrevPage);
 
@@ -881,6 +1025,9 @@ async function init() {
       if (e.key === "ArrowRight") goToNextPage();
       if (e.key === "ArrowLeft") goToPrevPage();
     });
+
+    // Show drag hint after 2 seconds
+    setTimeout(showDragHint, 2000);
 
   } catch (err) {
     console.error("Unexpected Error:", err);
