@@ -25,12 +25,41 @@
             box-sizing: border-box;
         }
 
+        html {
+            scroll-behavior: smooth;
+        }
+
         body {
             font-family: 'DM Sans', sans-serif;
             background: linear-gradient(135deg, #000000 0%, #000000 100%);
             min-height: 100vh;
-            overflow: hidden;
+            overflow-y: auto;
+            overflow-x: hidden;
             position: relative;
+        }
+
+        /* Custom Scrollbar for Body */
+        body::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        body::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.5);
+        }
+
+        body::-webkit-scrollbar-thumb {
+            background: rgba(79, 70, 229, 0.6);
+            border-radius: 10px;
+            border: 2px solid rgba(15, 23, 42, 0.5);
+        }
+
+        body::-webkit-scrollbar-thumb:hover {
+            background: rgba(79, 70, 229, 0.8);
+        }
+
+        body {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(79, 70, 229, 0.6) rgba(15, 23, 42, 0.5);
         }
 
         /* Animated background pattern */
@@ -55,13 +84,13 @@
 
         .container {
             max-width: 100%;
-            height: 100vh;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
             justify-content: center;
             position: relative;
             z-index: 1;
-            padding: 30px 0; /* Reduced padding for more cards */
+            padding: 30px 0;
         }
 
         /* Header */
@@ -488,6 +517,79 @@
             opacity: 0.9;
         }
 
+        /* Navigation Controls */
+        .navigation-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 30px;
+            padding: 20px 40px;
+            margin-top: 20px;
+        }
+
+        .nav-button {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(15, 23, 42, 0.9);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        .nav-button:hover:not(:disabled) {
+            background: var(--primary-blue);
+            border-color: var(--primary-blue);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(79, 70, 229, 0.4);
+        }
+
+        .nav-button:active:not(:disabled) {
+            transform: translateY(-1px);
+        }
+
+        .nav-button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .nav-button svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .page-indicator {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            background: rgba(15, 23, 42, 0.9);
+            padding: 12px 25px;
+            border-radius: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .page-number {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .page-label {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.7);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .testimonial-card {
@@ -519,6 +621,16 @@
             .row-2 .testimonials-track {
                 animation: scrollRight 25s linear infinite;
             }
+
+            .navigation-controls {
+                flex-wrap: wrap;
+                gap: 15px;
+            }
+
+            .nav-button {
+                padding: 10px 20px;
+                font-size: 0.9rem;
+            }
         }
     </style>
 </head>
@@ -527,7 +639,7 @@
         <div class="header">
             <div class="rating-badge">
                 <span class="star">★</span>
-                <span>Rated 4.5/5 by over 530+ Students</span>
+                <span id="totalStudents">Rated 4.5/5 by over 530+ Students</span>
             </div>
             <h1>Words of praise from others<br>about our presence.</h1>
             <p>Real experiences from our AI Bootcamp participants</p>
@@ -549,6 +661,27 @@
             </div>
         </div>
 
+        <div class="navigation-controls">
+            <button class="nav-button" id="prevBtn" disabled>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+                Previous
+            </button>
+
+            <div class="page-indicator">
+                <div class="page-number" id="pageNumber">1</div>
+                <div class="page-label">of <span id="totalPages">1</span></div>
+            </div>
+
+            <button class="nav-button" id="nextBtn">
+                Next
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+            </button>
+        </div>
+
         <div class="stats-section" id="statsSection" style="display: none;"></div>
     </div>
 
@@ -563,6 +696,14 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const TABLE_NAME = "students_feedback";
+
+// ==========================
+// GLOBAL STATE
+// ==========================
+let allStudents = [];
+let currentPage = 0;
+const CARDS_PER_ROW = 10; // Number of unique cards per row
+const TOTAL_CARDS_PER_PAGE = CARDS_PER_ROW * 2; // 10 cards in row 1 + 10 cards in row 2
 
 // ==========================
 // STAR GENERATOR
@@ -607,11 +748,62 @@ function createTestimonialCard(student) {
 }
 
 // ==========================
-// SPLIT ARRAY
+// SPLIT ARRAY FOR PAGE
 // ==========================
-function splitArray(arr) {
-  const mid = Math.ceil(arr.length / 2);
-  return [arr.slice(0, mid), arr.slice(mid)];
+function getPageStudents(pageIndex) {
+  const startIdx = pageIndex * TOTAL_CARDS_PER_PAGE;
+  const endIdx = startIdx + TOTAL_CARDS_PER_PAGE;
+  const pageStudents = allStudents.slice(startIdx, endIdx);
+  
+  // Split into two rows
+  const mid = Math.ceil(pageStudents.length / 2);
+  return [pageStudents.slice(0, mid), pageStudents.slice(mid)];
+}
+
+// ==========================
+// RENDER PAGE
+// ==========================
+function renderPage(pageIndex) {
+  const [row1Students, row2Students] = getPageStudents(pageIndex);
+
+  const track1 = document.getElementById("track1");
+  const track2 = document.getElementById("track2");
+
+  const row1HTML = row1Students.map(createTestimonialCard).join("");
+  const row2HTML = row2Students.map(createTestimonialCard).join("");
+
+  // Triple the content for seamless infinite scroll
+  track1.innerHTML = row1HTML + row1HTML + row1HTML;
+  track2.innerHTML = row2HTML + row2HTML + row2HTML;
+
+  // Update page indicator
+  document.getElementById("pageNumber").textContent = pageIndex + 1;
+
+  // Update button states
+  const prevBtn = document.getElementById("prevBtn");
+  const nextBtn = document.getElementById("nextBtn");
+  const totalPages = Math.ceil(allStudents.length / TOTAL_CARDS_PER_PAGE);
+
+  prevBtn.disabled = pageIndex === 0;
+  nextBtn.disabled = pageIndex >= totalPages - 1;
+}
+
+// ==========================
+// NAVIGATION HANDLERS
+// ==========================
+function goToNextPage() {
+  const totalPages = Math.ceil(allStudents.length / TOTAL_CARDS_PER_PAGE);
+  if (currentPage < totalPages - 1) {
+    currentPage++;
+    renderPage(currentPage);
+  }
+}
+
+function goToPrevPage() {
+  if (currentPage > 0) {
+    currentPage--;
+    renderPage(currentPage);
+  }
 }
 
 // ==========================
@@ -643,9 +835,7 @@ function calculateStats(students) {
   `;
 }
 
-// ==========================
-// INIT FUNCTION
-// ==========================
+
 async function init() {
   try {
     const { data: students, error } = await supabase
@@ -666,19 +856,31 @@ async function init() {
       return;
     }
 
-    const [row1Students, row2Students] = splitArray(students);
+    // Store all students
+    allStudents = students;
 
-    const track1 = document.getElementById("track1");
-    const track2 = document.getElementById("track2");
+    // Calculate total pages
+    const totalPages = Math.ceil(allStudents.length / TOTAL_CARDS_PER_PAGE);
+    document.getElementById("totalPages").textContent = totalPages;
+    document.getElementById("totalStudents").textContent = 
+      `Rated 4.5/5 by over ${allStudents.length}+ Students`;
+
+    // Render first page
+    renderPage(0);
+
+    // Stats section
     const statsSection = document.getElementById("statsSection");
-
-    const row1HTML = row1Students.map(createTestimonialCard).join("");
-    const row2HTML = row2Students.map(createTestimonialCard).join("");
-
-    track1.innerHTML = row1HTML + row1HTML + row1HTML;
-    track2.innerHTML = row2HTML + row2HTML + row2HTML;
-
     statsSection.innerHTML = calculateStats(students);
+
+    // Attach navigation handlers
+    document.getElementById("nextBtn").addEventListener("click", goToNextPage);
+    document.getElementById("prevBtn").addEventListener("click", goToPrevPage);
+
+    // Keyboard navigation
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight") goToNextPage();
+      if (e.key === "ArrowLeft") goToPrevPage();
+    });
 
   } catch (err) {
     console.error("Unexpected Error:", err);
