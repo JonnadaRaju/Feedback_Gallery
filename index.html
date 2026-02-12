@@ -1,504 +1,702 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bootcamp Student Feedback</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #0a0e27;
-      background-image: 
-        radial-gradient(2px 2px at 20% 30%, white, transparent),
-        radial-gradient(2px 2px at 60% 70%, white, transparent),
-        radial-gradient(1px 1px at 50% 50%, white, transparent),
-        radial-gradient(1px 1px at 80% 10%, white, transparent),
-        radial-gradient(2px 2px at 90% 60%, white, transparent),
-        radial-gradient(1px 1px at 33% 80%, white, transparent),
-        radial-gradient(1px 1px at 15% 90%, white, transparent);
-      background-size: 200% 200%;
-      background-position: 0% 0%;
-      animation: starfield 200s linear infinite;
-      color: white;
-      min-height: 100vh;
-      padding: 60px 20px;
-      position: relative;
-      overflow-x: hidden;
-    }
-
-    body::before {
-      content: '';
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: radial-gradient(ellipse at top, rgba(88, 101, 242, 0.15), transparent 50%),
-                  radial-gradient(ellipse at bottom, rgba(139, 92, 246, 0.15), transparent 50%);
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    @keyframes starfield {
-      0% { background-position: 0% 0%; }
-      100% { background-position: 100% 100%; }
-    }
-
-    .container {
-      max-width: 1400px;
-      margin: 0 auto;
-      position: relative;
-      z-index: 1;
-    }
-
-    /* Left Section */
-    .content-wrapper {
-      display: grid;
-      grid-template-columns: 380px 1fr;
-      gap: 60px;
-      margin-bottom: 50px;
-    }
-
-    .left-section {
-      position: sticky;
-      top: 40px;
-      height: fit-content;
-    }
-
-    .main-title {
-      font-size: 56px;
-      font-weight: 700;
-      line-height: 1.1;
-      margin-bottom: 30px;
-      background: linear-gradient(135deg, #fff 0%, #a78bfa 50%, #60a5fa 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      text-shadow: 0 0 40px rgba(167, 139, 250, 0.5);
-      filter: drop-shadow(0 0 20px rgba(167, 139, 250, 0.3));
-    }
-
-    .description {
-      font-size: 18px;
-      line-height: 1.6;
-      color: #a8b3cf;
-      margin-bottom: 40px;
-    }
-
-    .rating-section {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-    }
-
-    .stars {
-      display: flex;
-      gap: 5px;
-      font-size: 28px;
-    }
-
-    .star {
-      color: #fbbf24;
-      filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.6));
-    }
-
-    .rating-text {
-      font-size: 24px;
-      font-weight: 700;
-      color: white;
-    }
-
-    .rating-count {
-      color: #a8b3cf;
-      font-size: 18px;
-    }
-
-    /* Right Section - Testimonials Grid */
-    .testimonials-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 25px;
-      margin-bottom: 40px;
-    }
-
-    .testimonial-card {
-      background: rgba(15, 23, 42, 0.6);
-      border: 1px solid rgba(139, 92, 246, 0.2);
-      border-radius: 20px;
-      padding: 35px;
-      transition: all 0.4s ease;
-      position: relative;
-      backdrop-filter: blur(20px);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
-                  inset 0 1px 0 rgba(255, 255, 255, 0.05);
-    }
-
-    .testimonial-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      border-radius: 20px;
-      padding: 1px;
-      background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(96, 165, 250, 0.3));
-      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      -webkit-mask-composite: xor;
-      mask-composite: exclude;
-      opacity: 0;
-      transition: opacity 0.4s ease;
-    }
-
-    .testimonial-card:hover {
-      background: rgba(15, 23, 42, 0.8);
-      border-color: rgba(139, 92, 246, 0.4);
-      transform: translateY(-8px);
-      box-shadow: 0 20px 60px rgba(139, 92, 246, 0.3),
-                  0 0 40px rgba(96, 165, 250, 0.2),
-                  inset 0 1px 0 rgba(255, 255, 255, 0.1);
-    }
-
-    .testimonial-card:hover::before {
-      opacity: 1;
-    }
-
-    .quote-icon {
-      font-size: 48px;
-      background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(96, 165, 250, 0.3));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      line-height: 1;
-      margin-bottom: 20px;
-      filter: drop-shadow(0 0 10px rgba(139, 92, 246, 0.4));
-    }
-
-    .feedback-content {
-      font-size: 16px;
-      line-height: 1.7;
-      color: #e2e8f0;
-      font-style: italic;
-      margin-bottom: 25px;
-      min-height: 100px;
-    }
-
-    .student-info {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-      padding-top: 20px;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    .student-avatar {
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 2px solid rgba(139, 92, 246, 0.4);
-      box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
-    }
-
-    .student-details {
-      flex: 1;
-    }
-
-    .student-name {
-      font-size: 16px;
-      font-weight: 600;
-      color: #ffffff;
-      margin-bottom: 4px;
-    }
-
-    .student-roll {
-      font-size: 13px;
-      color: #60a5fa;
-      font-weight: 500;
-      text-shadow: 0 0 10px rgba(96, 165, 250, 0.5);
-    }
-
-    /* Pagination */
-    .pagination-wrapper {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 25px;
-      margin-top: 50px;
-    }
-
-    .pagination-btn {
-      background: rgba(15, 23, 42, 0.6);
-      border: 1px solid rgba(139, 92, 246, 0.3);
-      color: white;
-      padding: 14px 30px;
-      border-radius: 30px;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      backdrop-filter: blur(10px);
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-    }
-
-    .pagination-btn:hover:not(:disabled) {
-      background: rgba(139, 92, 246, 0.2);
-      border-color: rgba(139, 92, 246, 0.5);
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
-    }
-
-    .pagination-btn:disabled {
-      opacity: 0.3;
-      cursor: not-allowed;
-    }
-
-    .page-info {
-      font-size: 16px;
-      font-weight: 600;
-      color: #a8b3cf;
-      min-width: 100px;
-      text-align: center;
-    }
-
-    /* Loading State */
-    .loading {
-      grid-column: 1 / -1;
-      text-align: center;
-      padding: 80px;
-      color: #a8b3cf;
-      font-size: 18px;
-    }
-
-    .loading::after {
-      content: '';
-      display: inline-block;
-      width: 30px;
-      height: 30px;
-      border: 3px solid rgba(255, 255, 255, 0.2);
-      border-top-color: white;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin-left: 15px;
-      vertical-align: middle;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    /* Empty State */
-    .empty-state {
-      grid-column: 1 / -1;
-      text-align: center;
-      padding: 80px;
-      background: rgba(255, 255, 255, 0.03);
-      border-radius: 16px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    .empty-state h3 {
-      font-size: 24px;
-      margin-bottom: 10px;
-      color: white;
-    }
-
-    .empty-state p {
-      color: #a8b3cf;
-    }
-
-    /* Responsive Design */
-    @media (max-width: 1200px) {
-      .content-wrapper {
-        grid-template-columns: 1fr;
-        gap: 40px;
-      }
-
-      .left-section {
-        position: static;
-        text-align: center;
-      }
-
-      .rating-section {
-        justify-content: center;
-      }
-    }
-
-    @media (max-width: 768px) {
-      .testimonials-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .main-title {
-        font-size: 40px;
-      }
-
-      .description {
-        font-size: 16px;
-      }
-
-      .pagination-wrapper {
-        flex-wrap: wrap;
-      }
-    }
-  </style>
-</head>
-
-<body>
-  <div class="container">
-    <div class="content-wrapper">
-      <!-- Left Section -->
-      <div class="left-section">
-        <h1 class="main-title">What they say about us</h1>
-        <p class="description">
-          Discover the experiences and success stories from our bootcamp students who transformed their careers through our program.
-        </p>
-        <div class="rating-section">
-          <div class="stars">
-            <span class="star">★</span>
-            <span class="star">★</span>
-            <span class="star">★</span>
-            <span class="star">★</span>
-            <span class="star">★</span>
-          </div>
-          <div>
-            <div class="rating-text">4.8/5</div>
-            <div class="rating-count" id="totalCount">(0)</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Right Section - Testimonials -->
-      <div>
-        <div id="students" class="testimonials-grid"></div>
-        
-        <div class="pagination-wrapper">
-          <button class="pagination-btn" id="prevBtn" onclick="prevPage()">
-            ← Previous
-          </button>
-          <span class="page-info" id="pageInfo">Page 1</span>
-          <button class="pagination-btn" id="nextBtn" onclick="nextPage()">
-            Next →
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    const supabaseUrl = "https://ytxwtzqwmnmcvdhklbrw.supabase.co";
-    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl0eHd0enF3bW5tY3ZkaGtsYnJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3ODY2NDAsImV4cCI6MjA4NjM2MjY0MH0.hTAT2QcLxOrlTRVsVnWNJM1S5_4p0wU86cyI5vY5SMU"; 
-
-    const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
-
-    let page = 0;
-    const limit = 10;
-    let totalStudents = 0;
-
-    async function fetchTotalCount() {
-      const { count, error } = await supabaseClient
-        .from("students_feedback")
-        .select("*", { count: 'exact', head: true });
-
-      if (!error && count) {
-        totalStudents = count;
-        document.getElementById("totalCount").innerText = `(${count})`;
-      }
-    }
-
-    async function fetchStudents() {
-      const container = document.getElementById("students");
-      container.innerHTML = '<div class="loading">Loading testimonials...</div>';
-
-      const from = page * limit;
-      const to = from + limit - 1;
-
-      const { data, error } = await supabaseClient
-        .from("students_feedback")
-        .select("*")
-        .range(from, to);
-
-      if (error) {
-        console.error("Error fetching data:", error);
-        container.innerHTML = `
-          <div class="empty-state">
-            <h3>⚠️ Error Loading Data</h3>
-            <p>Please check your connection and try again.</p>
-          </div>
-        `;
-        return;
-      }
-
-      container.innerHTML = "";
-
-      if (data.length === 0) {
-        if (page > 0) {
-          page--;
-          return fetchStudents();
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Testimonials - Dual Scroll</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Fraunces:wght@700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary-blue: #4f46e5;
+            --bg-light: #f8fafc;
+            --card-bg: #ffffff;
+            --text-dark: #0f172a;
+            --text-gray: #64748b;
+            --accent-purple: #8b5cf6;
+            --accent-pink: #ec4899;
+            --accent-orange: #f59e0b;
+            --quote-blue: #3b82f6;
         }
-        container.innerHTML = `
-          <div class="empty-state">
-            <h3>📭 No Testimonials Found</h3>
-            <p>There are no student feedback records to display.</p>
-          </div>
-        `;
-        return;
-      }
 
-      data.forEach(student => {
-        const card = document.createElement('div');
-        card.className = 'testimonial-card';
-        card.innerHTML = `
-          <div class="quote-icon">"</div>
-          <div class="feedback-content">${student.feedback}</div>
-          <div class="student-info">
-            <img src="${student.image_url || 'https://via.placeholder.com/50'}"
-                 onerror="this.src='https://via.placeholder.com/50?text=' + '${student.name.charAt(0)}'"
-                 alt="${student.name}"
-                 class="student-avatar"/>
-            <div class="student-details">
-              <div class="student-name">${student.name}</div>
-              <div class="student-roll">Roll No: ${student["Roll Number"]}</div>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Animated background pattern */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+            animation: moveBackground 15s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes moveBackground {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(20px, -20px); }
+        }
+
+        .container {
+            max-width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            z-index: 1;
+            padding: 30px 0; /* Reduced padding for more cards */
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 0 40px;
+        }
+
+        .rating-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(15, 23, 42, 0.9);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .rating-badge .star {
+            color: #fbbf24;
+            font-size: 1.1rem;
+        }
+
+        .header h1 {
+            font-family: 'Fraunces', serif;
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 900;
+            color: white;
+            line-height: 1.2;
+            text-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.9);
+            margin-top: 10px;
+            font-weight: 400;
+        }
+
+        /* Scrolling Rows Container */
+        .testimonials-container {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            flex: 1;
+            justify-content: center;
+        }
+
+        .testimonials-row {
+            position: relative;
+            overflow: hidden;
+            padding: 10px 0;
+        }
+
+        /* Fade edges */
+        .testimonials-row::before,
+        .testimonials-row::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 150px;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .testimonials-row::before {
+            left: 0;
+            background: linear-gradient(to right, rgba(102, 126, 234, 1) 0%, rgba(102, 126, 234, 0) 100%);
+        }
+
+        .testimonials-row::after {
+            right: 0;
+            background: linear-gradient(to left, rgba(118, 75, 162, 1) 0%, rgba(118, 75, 162, 0) 100%);
+        }
+
+        /* Infinite scroll tracks */
+        .testimonials-track {
+            display: flex;
+            gap: 0px; /* Remove gap since cards have margin now */
+            will-change: transform;
+            padding: 15px 0; /* Add padding for glow space */
+        }
+
+        /* First row - scroll LEFT (right to left) */
+        .row-1 .testimonials-track {
+            animation: scrollLeft 30s linear infinite;
+        }
+
+        /* Second row - scroll RIGHT (left to right) */
+        .row-2 .testimonials-track {
+            animation: scrollRight 30s linear infinite;
+        }
+
+        @keyframes scrollLeft {
+            0% {
+                transform: translateX(0);
+            }
+            100% {
+                transform: translateX(-50%);
+            }
+        }
+
+        @keyframes scrollRight {
+            0% {
+                transform: translateX(-50%);
+            }
+            100% {
+                transform: translateX(0);
+            }
+        }
+
+        /* Testimonial Card - FIXED HEIGHT */
+        .testimonial-card {
+            min-width: 260px;
+            max-width: 260px;
+            height: 180px; /* Smaller, more compact */
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            flex-shrink: 0;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            margin: 10px; /* Reduced margin */
+        }
+
+        .testimonial-card:hover {
+            transform: translateY(-15px) scale(1.15);
+            box-shadow: 
+                0 30px 70px rgba(0, 0, 0, 0.3),
+                0 0 0 3px rgba(255, 255, 255, 0.5);
+            z-index: 100;
+            background: linear-gradient(135deg, 
+                rgba(255, 182, 193, 0.15) 0%, 
+                rgba(173, 216, 230, 0.15) 50%, 
+                rgba(255, 223, 186, 0.15) 100%),
+                #ffffff;
+        }
+
+        /* Add glow effect on hover */
+        .testimonial-card::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            background: linear-gradient(135deg, 
+                #ff6b9d 0%, 
+                #ffa56b 25%, 
+                #ffd56b 50%, 
+                #6bffd5 75%, 
+                #6b9dff 100%);
+            border-radius: 18px;
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            filter: blur(8px);
+        }
+
+        .testimonial-card:hover::before {
+            opacity: 0.8;
+            animation: borderShift 3s linear infinite;
+        }
+
+        @keyframes borderShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .testimonial-card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: inherit;
+            border-radius: 16px;
+            z-index: -1;
+        }
+
+        /* Pause animation when hovering over any card */
+        .testimonials-track:has(.testimonial-card:hover) {
+            animation-play-state: paused;
+        }
+
+        /* Quote mark */
+        .quote-mark {
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            font-size: 2rem;
+            font-family: 'Fraunces', serif;
+            color: var(--quote-blue);
+            opacity: 0.1;
+            line-height: 1;
+            transition: all 0.4s ease;
+        }
+
+        .testimonial-card:hover .quote-mark {
+            opacity: 0.3;
+            transform: scale(1.2) rotate(8deg);
+        }
+
+        /* Feedback text - WITH SCROLLABLE OVERFLOW */
+        .feedback {
+            font-size: 0.9rem;
+            line-height: 1.4;
+            color: var(--text-dark);
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+            font-weight: 500;
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 6px;
+            /* Custom scrollbar */
+            scrollbar-width: thin;
+            scrollbar-color: rgba(79, 70, 229, 0.3) transparent;
+        }
+
+        .feedback::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .feedback::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .feedback::-webkit-scrollbar-thumb {
+            background: rgba(79, 70, 229, 0.3);
+            border-radius: 10px;
+        }
+
+        .feedback::-webkit-scrollbar-thumb:hover {
+            background: rgba(79, 70, 229, 0.5);
+        }
+
+        /* Rating Stars */
+        .rating {
+            display: flex;
+            gap: 2px;
+            margin-bottom: 10px;
+            flex-shrink: 0;
+        }
+
+        .star {
+            font-size: 0.9rem;
+            color: #fbbf24;
+            text-shadow: 0 2px 4px rgba(251, 191, 36, 0.3);
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .star.empty {
+            color: #e5e7eb;
+        }
+
+        .testimonial-card:hover .star.filled {
+            animation: starBounce 0.6s ease-in-out;
+        }
+
+        .testimonial-card:hover .star:nth-child(1) { animation-delay: 0s; }
+        .testimonial-card:hover .star:nth-child(2) { animation-delay: 0.1s; }
+        .testimonial-card:hover .star:nth-child(3) { animation-delay: 0.2s; }
+        .testimonial-card:hover .star:nth-child(4) { animation-delay: 0.3s; }
+        .testimonial-card:hover .star:nth-child(5) { animation-delay: 0.4s; }
+
+        @keyframes starBounce {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            25% { transform: scale(1.3) rotate(-10deg); }
+            50% { transform: scale(1.1) rotate(10deg); }
+            75% { transform: scale(1.3) rotate(-5deg); }
+        }
+
+        /* Student info */
+        .student-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #f1f5f9;
+            flex-shrink: 0;
+        }
+
+        .student-image {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--primary-blue);
+            box-shadow: 0 3px 10px rgba(79, 70, 229, 0.25);
+            transition: all 0.4s ease;
+            flex-shrink: 0;
+        }
+
+        .testimonial-card:hover .student-image {
+            transform: scale(1.15);
+            border-width: 3px;
+            box-shadow: 0 6px 20px rgba(79, 70, 229, 0.5);
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1.15); }
+            50% { transform: scale(1.2); }
+        }
+
+        .student-details {
+            flex: 1;
+            min-width: 0; /* Allow text truncation */
+        }
+
+        .student-name {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 2px;
+            text-transform: capitalize;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .student-branch {
+            font-size: 0.68rem;
+            font-weight: 500;
+            color: var(--text-gray);
+            text-transform: uppercase;
+            letter-spacing: 0.2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Card color variants */
+        .testimonial-card:nth-child(6n+1) {
+            border-top: 4px solid #4f46e5;
+        }
+
+        .testimonial-card:nth-child(6n+2) {
+            border-top: 4px solid #ec4899;
+        }
+
+        .testimonial-card:nth-child(6n+3) {
+            border-top: 4px solid #f59e0b;
+        }
+
+        .testimonial-card:nth-child(6n+4) {
+            border-top: 4px solid #10b981;
+        }
+
+        .testimonial-card:nth-child(6n+5) {
+            border-top: 4px solid #8b5cf6;
+        }
+
+        .testimonial-card:nth-child(6n+6) {
+            border-top: 4px solid #ef4444;
+        }
+
+        /* Stats Section */
+        .stats-section {
+            display: flex;
+            justify-content: center;
+            gap: 50px;
+            margin-top: 40px;
+            padding: 0 40px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-family: 'Fraunces', serif;
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: white;
+            text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .stat-label {
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.9);
+            margin-top: 5px;
+            font-weight: 500;
+        }
+
+        /* Loading state */
+        .loading {
+            text-align: center;
+            color: white;
+            font-size: 1.2rem;
+            padding: 50px 20px;
+        }
+
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+
+        /* Error state */
+        .error {
+            text-align: center;
+            color: white;
+            padding: 50px 20px;
+            background: rgba(239, 68, 68, 0.2);
+            border-radius: 12px;
+            margin: 20px;
+        }
+
+        .error h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .error p {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .testimonial-card {
+                min-width: 240px;
+                max-width: 240px;
+                height: 170px;
+                padding: 18px;
+                margin: 8px;
+            }
+
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .testimonials-container {
+                gap: 15px;
+            }
+
+            .testimonials-row::before,
+            .testimonials-row::after {
+                width: 60px;
+            }
+
+            /* Faster scroll on mobile */
+            .row-1 .testimonials-track {
+                animation: scrollLeft 25s linear infinite;
+            }
+
+            .row-2 .testimonials-track {
+                animation: scrollRight 25s linear infinite;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="rating-badge">
+                <span class="star">★</span>
+                <span>Rated 4.5/5 by over 530+ Students</span>
             </div>
-          </div>
-        `;
-        container.appendChild(card);
-      });
+            <h1>Words of praise from others<br>about our presence.</h1>
+            <p>Real experiences from our AI Bootcamp participants</p>
+        </div>
 
-      updatePaginationUI(data.length);
+        <div class="testimonials-container">
+            <!-- First Row - Scrolls LEFT (right to left) -->
+            <div class="testimonials-row row-1">
+                <div class="testimonials-track" id="track1">
+                    <div class="loading">Loading testimonials</div>
+                </div>
+            </div>
+
+            <!-- Second Row - Scrolls RIGHT (left to right) -->
+            <div class="testimonials-row row-2">
+                <div class="testimonials-track" id="track2">
+                    <div class="loading">Loading testimonials</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats-section" id="statsSection" style="display: none;"></div>
+    </div>
+
+    <script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+// ==========================
+// SUPABASE CONFIG
+// ==========================
+const SUPABASE_URL = "https://ytxwtzqwmnmcvdhklbrw.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl0eHd0enF3bW5tY3ZkaGtsYnJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3ODY2NDAsImV4cCI6MjA4NjM2MjY0MH0.hTAT2QcLxOrlTRVsVnWNJM1S5_4p0wU86cyI5vY5SMU";
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const TABLE_NAME = "students_feedback";
+
+// ==========================
+// STAR GENERATOR
+// ==========================
+function createStars(rating) {
+  let stars = "";
+  for (let i = 1; i <= 5; i++) {
+    stars += `<span class="star ${i <= rating ? "" : "empty"}">★</span>`;
+  }
+  return stars;
+}
+
+// ==========================
+// CARD CREATOR
+// ==========================
+function createTestimonialCard(student) {
+  const name = student["Full Name"] || "Anonymous";
+  const branch = student["Branch"] || "";
+  const rating = parseInt(student["Rating"] || 5);
+  const feedback = student["Feedback"] || "";
+  const imageUrl = student["image_url"] || "";
+
+  return `
+    <div class="testimonial-card">
+        <div class="quote-mark">"</div>
+        <div class="feedback">${feedback}</div>
+        <div class="rating">
+            ${createStars(rating)}
+        </div>
+        <div class="student-info">
+            <img src="${imageUrl}" 
+                 alt="${name}" 
+                 class="student-image"
+                 onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=4f46e5&color=fff&size=200'">
+            <div class="student-details">
+                <div class="student-name">${name}</div>
+                <div class="student-branch">${branch}</div>
+            </div>
+        </div>
+    </div>
+  `;
+}
+
+// ==========================
+// SPLIT ARRAY
+// ==========================
+function splitArray(arr) {
+  const mid = Math.ceil(arr.length / 2);
+  return [arr.slice(0, mid), arr.slice(mid)];
+}
+
+// ==========================
+// STATS CALCULATION
+// ==========================
+function calculateStats(students) {
+  const total = students.length;
+  const avgRating = (
+    students.reduce((sum, s) => sum + parseInt(s["Rating"] || 0), 0) / total
+  ).toFixed(1);
+
+  const satisfaction = (
+    (students.filter(s => parseInt(s["Rating"] || 0) >= 4).length / total) * 100
+  ).toFixed(0);
+
+  return `
+    <div class="stat-item">
+        <div class="stat-number">${total}</div>
+        <div class="stat-label">Total Reviews</div>
+    </div>
+    <div class="stat-item">
+        <div class="stat-number">${avgRating}★</div>
+        <div class="stat-label">Average Rating</div>
+    </div>
+    <div class="stat-item">
+        <div class="stat-number">${satisfaction}%</div>
+        <div class="stat-label">Satisfaction Rate</div>
+    </div>
+  `;
+}
+
+// ==========================
+// INIT FUNCTION
+// ==========================
+async function init() {
+  try {
+    const { data: students, error } = await supabase
+      .from(TABLE_NAME)
+      .select("*")
+      .order("id", { ascending: true });
+
+    console.log("Fetched Data:", students);
+
+    if (error) {
+      console.error(error);
+      alert("Error fetching data: " + error.message);
+      return;
     }
 
-    function updatePaginationUI(dataLength) {
-      document.getElementById("pageInfo").innerText = `Page ${page + 1}`;
-      document.getElementById("prevBtn").disabled = page === 0;
-      document.getElementById("nextBtn").disabled = dataLength < limit;
+    if (!students || students.length === 0) {
+      alert("No data found in table.");
+      return;
     }
 
-    function nextPage() {
-      page++;
-      fetchStudents();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    const [row1Students, row2Students] = splitArray(students);
 
-    function prevPage() {
-      if (page > 0) {
-        page--;
-        fetchStudents();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-    }
+    const track1 = document.getElementById("track1");
+    const track2 = document.getElementById("track2");
+    const statsSection = document.getElementById("statsSection");
 
-    // Initial load
-    fetchTotalCount();
-    fetchStudents();
-  </script>
+    const row1HTML = row1Students.map(createTestimonialCard).join("");
+    const row2HTML = row2Students.map(createTestimonialCard).join("");
+
+    track1.innerHTML = row1HTML + row1HTML + row1HTML;
+    track2.innerHTML = row2HTML + row2HTML + row2HTML;
+
+    statsSection.innerHTML = calculateStats(students);
+
+  } catch (err) {
+    console.error("Unexpected Error:", err);
+  }
+}
+
+init();
+</script>
+
 </body>
 </html>
